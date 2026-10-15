@@ -45,9 +45,16 @@ app.use("/cdn/", async (req, res) => {
       return;
     }
     const file = parts.map(encodeURIComponent).join("/");
-    const upstream = `https://cdn.jsdelivr.net/gh/landonalts/${repo}@${branch}/${file}`;
-    const r = await fetch(upstream);
-    if (!r.ok) { res.status(r.status).end("upstream error"); return; }
+    const GH = "landonalts";
+    let up = await fetch(`https://cdn.jsdelivr.net/gh/${GH}/${repo}@${branch}/${file}`);
+    if (!up.ok) {
+      // jsDelivr refuses files >20MB (403) and flakes — fall back to raw.githubusercontent
+      try {
+        const raw = await fetch(`https://raw.githubusercontent.com/${GH}/${repo}/${branch}/${file}`);
+        if (raw.ok) up = raw;
+      } catch (e) { /* keep original response */ }
+    }
+    if (!up.ok) { res.status(up.status).end("upstream error"); return; }
     res.setHeader("Access-Control-Allow-Origin", "*");
     // jsDelivr serves .html as text/plain (breaks iframes) — set type from extension
     const MIME = { ".html": "text/html; charset=utf-8", ".htm": "text/html; charset=utf-8",
@@ -59,8 +66,8 @@ app.use("/cdn/", async (req, res) => {
       ".ogg": "audio/ogg", ".mp4": "video/mp4", ".webm": "video/webm",
       ".woff": "font/woff", ".woff2": "font/woff2", ".ttf": "font/ttf" };
     const ext = ("." + file.split(".").pop().toLowerCase()).slice(0, 6);
-    res.setHeader("content-type", MIME[ext] || r.headers.get("content-type") || "application/octet-stream");
-    const buf = Buffer.from(await r.arrayBuffer());
+    res.setHeader("content-type", MIME[ext] || up.headers.get("content-type") || "application/octet-stream");
+    const buf = Buffer.from(await up.arrayBuffer());
     res.setHeader("content-length", buf.length);
     res.send(buf);
   } catch (e) { res.status(502).end("proxy error"); }
