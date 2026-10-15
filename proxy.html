@@ -92,6 +92,7 @@ function go(u) {
   setStatus('Loading ' + u);
   const frame = controller.createFrame($('frame'));
   frame.go(u);
+  $('frame').addEventListener('load', () => setStatus('Proxying ' + u), { once: true });
 }
 
 $('go').onclick = () => go();
