@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Games</title>
+<link rel="stylesheet" href="./style.css" />
+<script src="./app.js"></script>
+</head>
+<body>
+<header>
+  <div class="logo" onclick="location.href='./index.html'">GAME<span>HUB</span></div>
+  <nav>
+    <button class="btn" onclick="location.href='./games.html'">Games</button>
+    <button class="btn" onclick="location.href='./proxy.html'">Proxy</button>
+    <button class="btn" onclick="location.href='./settings.html'">Settings</button>
+  </nav>
+</header>
+
+<div class="section">
+  <input id="q" class="searchbar" style="margin:0 0 18px;max-width:100%" placeholder="Search 399 games..." autocomplete="off" />
+  <div class="grid" id="grid"></div>
+  <p id="count" style="color:var(--muted);font-size:13px;margin-top:16px"></p>
+</div>
+
+<script src="./games.js"></script>
+<script>
+const grid = document.getElementById('grid');
+const count = document.getElementById('count');
+const input = document.getElementById('q');
+const params = new URLSearchParams(location.search);
+if (params.get('q')) input.value = params.get('q');
+
+function render() {
+  const q = input.value.trim().toLowerCase();
+  grid.innerHTML = '';
+  const hits = q ? GAMES.filter(g => g.title.toLowerCase().includes(q)) : GAMES;
+  count.textContent = hits.length + ' game' + (hits.length === 1 ? '' : 's');
+  const frag = document.createDocumentFragment();
+  hits.slice(0, 600).forEach(g => {
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.innerHTML = '<div class="t"></div><div class="src"></div>';
+    d.querySelector('.t').textContent = g.title;
+    d.querySelector('.src').textContent = g.src === 'pack' ? 'pack' : 'gfiles';
+    d.onclick = () => location.href = './play.html?g=' + encodeURIComponent(g.id);
+    frag.appendChild(d);
+  });
+  grid.appendChild(frag);
+}
+input.addEventListener('input', render);
+render();
+input.focus();
+</script>
+</body>
+</html>

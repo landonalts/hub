@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings</title>
+<link rel="stylesheet" href="./style.css" />
+<script src="./app.js"></script>
+</head>
+<body>
+<header>
+  <div class="logo" onclick="location.href='./index.html'">GAME<span>HUB</span></div>
+  <nav>
+    <button class="btn" onclick="location.href='./games.html'">Games</button>
+    <button class="btn" onclick="location.href='./proxy.html'">Proxy</button>
+    <button class="btn" onclick="location.href='./settings.html'">Settings</button>
+  </nav>
+</header>
+
+<div class="settings">
+  <div class="setting-group">
+    <h3>Tab Cloak</h3>
+    <label>Preset disguise</label>
+    <select id="cloak">
+      <option value="default">Game Hub (default)</option>
+      <option value="classroom">Google Classroom</option>
+      <option value="docs">Google Docs</option>
+      <option value="drive">Google Drive</option>
+      <option value="canvas">Canvas Dashboard</option>
+      <option value="clever">Clever Portal</option>
+    </select>
+    <label>Custom tab title (overrides preset)</label>
+    <input type="text" id="ctitle" placeholder="e.g. Math Homework" />
+    <label>Custom favicon URL (overrides preset)</label>
+    <input type="text" id="cicon" placeholder="https://..." />
+    <p class="note">The tab title and icon change instantly and apply on every page.</p>
+  </div>
+
+  <div class="setting-group">
+    <h3>Appearance</h3>
+    <label>Theme</label>
+    <select id="theme">
+      <option value="dark">Dark</option>
+      <option value="light">Light</option>
+    </select>
+  </div>
+
+  <div class="setting-group">
+    <h3>Stealth</h3>
+    <div class="row2">
+      <button class="btn" id="blank">Open hub in about:blank</button>
+    </div>
+    <p class="note">Opens the hub inside a blank tab so it doesn't show in your history as a game site.</p>
+  </div>
+
+  <div class="row2">
+    <button class="btn primary" id="save">Save Settings</button>
+    <button class="btn" id="reset">Reset</button>
+  </div>
+  <p class="note" id="saved" style="display:none;color:#4ade80">Saved.</p>
+</div>
+
+<script>
+const s = loadSettings();
+document.getElementById('cloak').value = s.cloak || 'default';
+document.getElementById('ctitle').value = s.title || '';
+document.getElementById('cicon').value = s.icon || '';
+document.getElementById('theme').value = s.theme || 'dark';
+
+document.getElementById('save').onclick = () => {
+  saveSettings({
+    cloak: document.getElementById('cloak').value,
+    title: document.getElementById('ctitle').value.trim(),
+    icon: document.getElementById('cicon').value.trim(),
+    theme: document.getElementById('theme').value
+  });
+  applySettings();
+  const n = document.getElementById('saved');
+  n.style.display = 'block';
+  setTimeout(() => n.style.display = 'none', 1500);
+};
+document.getElementById('reset').onclick = () => {
+  localStorage.removeItem('hub-settings');
+  location.reload();
+};
+document.getElementById('blank').onclick = () => {
+  const w = window.open('about:blank', '_blank');
+  if (!w) return;
+  w.document.write('<iframe src="' + location.origin + '/index.html" style="position:fixed;inset:0;width:100%;height:100%;border:none"></iframe>');
+  w.document.close();
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Proxy</title>
+<link rel="stylesheet" href="./style.css" />
+<script src="./app.js"></script>
+<style>
+  #status { text-align:center; color: var(--muted); font-size: 13px; padding: 8px; min-height: 32px; }
+  #status.err { color: #ff6b6b; }
+</style>
+</head>
+<body>
+<div class="player-wrap">
+  <div class="player-bar">
+    <button class="btn" onclick="location.href='./index.html'">&#8592; Hub</button>
+    <input id="url" class="searchbar" style="margin:0;flex:1;max-width:none" placeholder="Enter a URL..." autocomplete="off" />
+    <button class="btn primary" id="go">Go</button>
+    <button class="btn" id="fs">Fullscreen</button>
+  </div>
+  <div id="status">Starting proxy...</div>
+  <iframe id="frame" style="flex:1;width:100%;border:none;background:#fff" allow="fullscreen"></iframe>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const statusEl = $('status');
+function setStatus(t, err) {
+  statusEl.textContent = t;
+  statusEl.className = err ? 'err' : '';
+}
+
+const loadScript = (src) => new Promise((resolve, reject) => {
+  const s = document.createElement('script');
+  s.src = src; s.onload = resolve;
+  s.onerror = () => reject(new Error('Failed to load ' + src));
+  document.head.append(s);
+});
+
+let controller = null;
+
+async function init() {
+  try {
+    setStatus('Registering service worker...');
+    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' });
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) {
+      await new Promise((res) => navigator.serviceWorker.addEventListener('controllerchange', res, { once: true }));
+    }
+    const sw = navigator.serviceWorker.controller || reg.active;
+    if (!sw) throw new Error('Service worker did not activate');
+
+    setStatus('Loading proxy engine...');
+    for (const src of ['/scram/scramjet.js', '/controller/controller.api.js', '/utils/scramjet-utils.js']) {
+      await loadScript(src);
+    }
+    const { default: BareClient } = await import('/baremod/index.mjs');
+
+    setStatus('Connecting...');
+    const api = window.$scramjetController;
+    controller = new api.Controller({
+      serviceworker: sw,
+      transport: new BareClient(new URL('/bare/', location.href)),
+      config: {
+        scramjetPath: '/scram/scramjet.js',
+        wasmPath: '/scram/scramjet.wasm',
+        injectPath: '/controller/controller.inject.js',
+      },
+    });
+    await controller.wait();
+    setInterval(() => { navigator.serviceWorker.controller?.postMessage('keepalive'); }, 15000);
+
+    setStatus('Ready. Enter a URL above.');
+    const u = new URLSearchParams(location.search).get('u');
+    if (u) { $('url').value = u; go(u); }
+  } catch (e) {
+    setStatus('Proxy failed to start: ' + e.message, true);
+  }
+}
+
+function normalize(u) {
+  u = u.trim();
+  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  return u;
+}
+
+function go(u) {
+  if (!controller) { setStatus('Proxy not ready yet.', true); return; }
+  u = normalize(u || $('url').value);
+  if (!u) return;
+  setStatus('Loading ' + u);
+  const frame = controller.createFrame($('frame'));
+  frame.go(u);
+}
+
+$('go').onclick = () => go();
+$('url').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+$('fs').onclick = () => {
+  const f = $('frame');
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (f.requestFullscreen) f.requestFullscreen();
+};
+
+init();
+</script>
+</body>
+</html>

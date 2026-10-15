@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Play</title>
+<link rel="stylesheet" href="./style.css" />
+<script src="./app.js"></script>
+</head>
+<body>
+<div class="player-wrap">
+  <div class="player-bar">
+    <button class="btn" onclick="history.back()">&#8592; Back</button>
+    <div class="title" id="gtitle">Loading...</div>
+    <div class="spacer"></div>
+    <button class="btn" id="fs">Fullscreen</button>
+  </div>
+  <iframe id="gameframe" allow="fullscreen; autoplay; gamepad" allowfullscreen></iframe>
+</div>
+
+<script src="./games.js"></script>
+<script>
+const id = new URLSearchParams(location.search).get('g');
+const g = GAMES.find(x => x.id === id);
+const frame = document.getElementById('gameframe');
+if (!g) {
+  document.getElementById('gtitle').textContent = 'Game not found';
+} else {
+  document.getElementById('gtitle').textContent = g.title;
+  frame.src = g.url;
+}
+document.getElementById('fs').onclick = () => {
+  const el = frame;
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (el.requestFullscreen) el.requestFullscreen();
+};
+</script>
+</body>
+</html>
