@@ -46,15 +46,24 @@ app.use("/cdn/", async (req, res) => {
     }
     const file = parts.map(encodeURIComponent).join("/");
     const GH = "landonalts";
-    let up = await fetch(`https://cdn.jsdelivr.net/gh/${GH}/${repo}@${branch}/${file}`);
-    if (!up.ok) {
-      // jsDelivr refuses files >20MB (403) and flakes — fall back to raw.githubusercontent
+    const jsd = `https://cdn.jsdelivr.net/gh/${GH}/${repo}@${branch}/${file}`;
+    const raw = `https://raw.githubusercontent.com/${GH}/${repo}/${branch}/${file}`;
+    const stc = `https://cdn.statically.io/gh/${GH}/${repo}@${branch}/${file}`;
+    // pack has >20MB files (jsDelivr 403s them) — try raw first there
+    const sources = repo === "Offline-HTML-Games-Pack" ? [raw, jsd, stc] : [jsd, raw, stc];
+    let buf = null, ctype = null;
+    for (const u of sources) {
       try {
-        const raw = await fetch(`https://raw.githubusercontent.com/${GH}/${repo}/${branch}/${file}`);
-        if (raw.ok) up = raw;
-      } catch (e) { /* keep original response */ }
+        const r = await fetch(u, { signal: AbortSignal.timeout(45000) });
+        if (!r.ok) continue;
+        const b = Buffer.from(await r.arrayBuffer());
+        // jsDelivr sometimes caches GitHub's 429 page with a 200 status
+        if (b.length < 2048 && b.toString("utf8", 0, 300).includes("Too Many Requests")) continue;
+        buf = b; ctype = r.headers.get("content-type");
+        break;
+      } catch (e) { /* try next source */ }
     }
-    if (!up.ok) { res.status(up.status).end("upstream error"); return; }
+    if (!buf) { res.status(502).end("upstream error"); return; }
     res.setHeader("Access-Control-Allow-Origin", "*");
     // jsDelivr serves .html as text/plain (breaks iframes) — set type from extension
     const MIME = { ".html": "text/html; charset=utf-8", ".htm": "text/html; charset=utf-8",
@@ -66,8 +75,7 @@ app.use("/cdn/", async (req, res) => {
       ".ogg": "audio/ogg", ".mp4": "video/mp4", ".webm": "video/webm",
       ".woff": "font/woff", ".woff2": "font/woff2", ".ttf": "font/ttf" };
     const ext = ("." + file.split(".").pop().toLowerCase()).slice(0, 6);
-    res.setHeader("content-type", MIME[ext] || up.headers.get("content-type") || "application/octet-stream");
-    const buf = Buffer.from(await up.arrayBuffer());
+    res.setHeader("content-type", MIME[ext] || ctype || "application/octet-stream");
     res.setHeader("content-length", buf.length);
     res.send(buf);
   } catch (e) { res.status(502).end("proxy error"); }
