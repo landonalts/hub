@@ -75,8 +75,9 @@ nav { margin-left: auto; display: flex; gap: 4px; }
 }
 .card:hover { border-color: var(--faint); transform: translateY(-2px); }
 .card .thumb {
-  width: 100%; aspect-ratio: 1; border-radius: 6px;
-  background: #0b0b0b; display: block;
+  width: 100%; aspect-ratio: 16/10; border-radius: 6px;
+  background-color: #0b0b0b; background-size: 640px 400px; background-repeat: no-repeat;
+  display: block;
 }
 .card .t { font-size: 12px; font-weight: 500; line-height: 1.35; padding: 0 2px 2px; }
 

@@ -41,14 +41,9 @@ function render() {
   hits.slice(0, 600).forEach(g => {
     const d = document.createElement('div');
     d.className = 'card';
-    const img = document.createElement('img');
-    img.className = 'thumb';
-    img.alt = '';
-    img.loading = 'lazy';
-    img.src = gameThumb(g.id, g.title);
     const t = document.createElement('div');
     t.className = 't'; t.textContent = g.title;
-    d.appendChild(img); d.appendChild(t);
+    d.appendChild(thumbDiv(g)); d.appendChild(t);
     d.onclick = () => location.href = './play.html?g=' + encodeURIComponent(g.id);
     frag.appendChild(d);
   });
