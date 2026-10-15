@@ -3,64 +3,52 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Game Hub</title>
+<title>hub</title>
 <link rel="stylesheet" href="./style.css" />
 <script src="./app.js"></script>
 </head>
 <body>
 <header>
-  <div class="logo" onclick="location.href='./index.html'">GAME<span>HUB</span></div>
+  <div class="logo" onclick="location.href='./index.html'">HUB</div>
   <nav>
-    <button class="btn" onclick="location.href='./games.html'">Games</button>
-    <button class="btn" onclick="location.href='./proxy.html'">Proxy</button>
-    <button class="btn" onclick="location.href='./settings.html'">Settings</button>
+    <button class="nlink" onclick="location.href='./games.html'">games</button>
+    <button class="nlink" onclick="location.href='./proxy.html'">proxy</button>
+    <button class="nlink" onclick="location.href='./settings.html'">settings</button>
   </nav>
 </header>
 
 <div class="hero">
-  <h1>GAME<span>HUB</span></h1>
-  <p>399 unblocked games. Free forever.</p>
-  <div class="row">
-    <button class="btn primary" onclick="location.href='./games.html'">Browse Games</button>
-    <button class="btn" onclick="location.href='./settings.html'">Settings</button>
-  </div>
-  <input id="q" class="searchbar" placeholder="Search games..." autocomplete="off" />
-  <form class="proxybar" onsubmit="goProxy(event)">
-    <input id="purl" placeholder="Proxy: enter a URL..." autocomplete="off" />
-    <button class="btn primary" type="submit">Go</button>
-  </form>
+  <h1>HUB</h1>
+  <p>449 games &middot; proxy</p>
+  <input id="q" class="searchbar" placeholder="search games..." autocomplete="off" />
 </div>
 
 <div class="section">
-  <h2>Featured</h2>
+  <h2>featured</h2>
   <div class="grid" id="featured"></div>
 </div>
 
-<footer>Game Hub &mdash; play free in your browser</footer>
+<footer>hub</footer>
 
 <script src="./games.js"></script>
 <script>
 function card(g) {
   const d = document.createElement('div');
   d.className = 'card';
-  d.innerHTML = '<div class="t"></div><div class="src"></div>';
-  d.querySelector('.t').textContent = g.title;
-  d.querySelector('.src').textContent = g.src === 'pack' ? 'pack' : 'gfiles';
+  const t = document.createElement('div');
+  t.className = 't'; t.textContent = g.title;
+  d.appendChild(t);
   d.onclick = () => location.href = './play.html?g=' + encodeURIComponent(g.id);
   return d;
 }
-const feat = document.getElementById('featured');
-// seeded random-ish: 8 spread across catalog
 const picks = [3, 40, 87, 120, 165, 210, 260, 330].map(i => GAMES[i % GAMES.length]);
+const feat = document.getElementById('featured');
 picks.forEach(g => feat.appendChild(card(g)));
-document.getElementById('q').addEventListener('keydown', e => {
-  if (e.key === 'Enter') location.href = './games.html?q=' + encodeURIComponent(e.target.value);
+const q = document.getElementById('q');
+q.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && q.value.trim()) location.href = './games.html?q=' + encodeURIComponent(q.value.trim());
 });
-function goProxy(e) {
-  e.preventDefault();
-  const u = document.getElementById('purl').value.trim();
-  if (u) location.href = './proxy.html?u=' + encodeURIComponent(u);
-}
+q.focus();
 </script>
 </body>
 </html>

@@ -8,7 +8,7 @@ function loadSettings() {
 function saveSettings(s) { localStorage.setItem('hub-settings', JSON.stringify(s)); }
 
 const CLOAKS = {
-  default: { title: 'Game Hub', icon: '' },
+  default: { title: 'hub', icon: '' },
   classroom: { title: 'Google Classroom', icon: 'https://ssl.gstatic.com/classroom/favicon.png' },
   docs: { title: 'Google Docs', icon: 'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico' },
   drive: { title: 'Google Drive', icon: 'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png' },

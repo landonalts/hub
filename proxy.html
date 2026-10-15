@@ -3,28 +3,32 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Proxy</title>
+<title>proxy</title>
 <link rel="stylesheet" href="./style.css" />
 <script src="./app.js"></script>
-<style>
-  #status { text-align:center; color: var(--muted); font-size: 13px; padding: 8px; min-height: 32px; }
-  #status.err { color: #ff6b6b; }
-</style>
 </head>
 <body>
 <div class="player-wrap">
-  <div class="player-bar">
-    <button class="btn" onclick="location.href='./index.html'">&#8592; Hub</button>
-    <input id="url" class="searchbar" style="margin:0;flex:1;max-width:none" placeholder="Enter a URL..." autocomplete="off" />
-    <button class="btn primary" id="go">Go</button>
-    <button class="btn" id="fs">Fullscreen</button>
+  <div class="tabs" id="tabs">
+    <button class="tabadd" id="newtab" title="new tab">+</button>
   </div>
-  <div id="status">Starting proxy...</div>
-  <iframe id="frame" style="flex:1;width:100%;border:none;background:#fff" allow="fullscreen"></iframe>
+  <div class="addrbar">
+    <button class="btn" onclick="location.href='./index.html'">&larr;</button>
+    <input id="url" placeholder="search duckduckgo or enter url" autocomplete="off" spellcheck="false" />
+    <button class="btn" id="go">go</button>
+  </div>
+  <div class="bmbar" id="bmbar">
+    <span class="lbl">bookmarklets</span>
+    <button class="bm" id="bmadd">+</button>
+  </div>
+  <div id="status">starting...</div>
+  <div id="frames" style="flex:1;display:flex;flex-direction:column;min-height:0"></div>
 </div>
 
 <script>
 const $ = (id) => document.getElementById(id);
+const DDG_HOME = 'https://duckduckgo.com';
+const DDG_SEARCH = 'https://html.duckduckgo.com/html/?q=';
 const statusEl = $('status');
 function setStatus(t, err) {
   statusEl.textContent = t;
@@ -34,30 +38,169 @@ function setStatus(t, err) {
 const loadScript = (src) => new Promise((resolve, reject) => {
   const s = document.createElement('script');
   s.src = src; s.onload = resolve;
-  s.onerror = () => reject(new Error('Failed to load ' + src));
+  s.onerror = () => reject(new Error('failed to load ' + src));
   document.head.append(s);
 });
 
-let controller = null;
+// decode real url from scramjet rewritten src: /~/sj/<cid>/<fid>/<encoded>
+function realUrl(rewritten) {
+  try {
+    const m = String(rewritten).match(/\/~\/sj\/[^/]+\/[^/]+\/(.+)/);
+    return m ? decodeURIComponent(m[1]) : rewritten;
+  } catch (e) { return rewritten; }
+}
+function hostOf(u) {
+  try { return new URL(u).hostname.replace(/^www\./, ''); }
+  catch (e) { return 'new tab'; }
+}
+function resolveInput(v) {
+  v = (v || '').trim();
+  if (!v) return null;
+  if (/^https?:\/\//i.test(v)) return v;
+  if (/^[\w-]+(\.[\w-]+)+(:\d+)?(\/\S*)?$/.test(v)) return 'https://' + v;
+  return DDG_SEARCH + encodeURIComponent(v);
+}
 
+let controller = null;
+let tabs = [];
+let activeId = null;
+let tabSeq = 0;
+
+function activeTab() { return tabs.find(t => t.id === activeId); }
+
+function renderTabs() {
+  const bar = $('tabs');
+  bar.querySelectorAll('.tab').forEach(e => e.remove());
+  const add = $('newtab');
+  tabs.forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'tab' + (t.id === activeId ? ' active' : '');
+    const label = document.createElement('span');
+    label.textContent = t.title;
+    const x = document.createElement('button');
+    x.className = 'x'; x.textContent = '×';
+    x.onclick = (e) => { e.stopPropagation(); closeTab(t.id); };
+    el.appendChild(label); el.appendChild(x);
+    el.onclick = () => switchTab(t.id);
+    el.title = t.url;
+    bar.insertBefore(el, add);
+  });
+}
+
+function newTab(url) {
+  const id = ++tabSeq;
+  const iframe = document.createElement('iframe');
+  iframe.className = 'pframe';
+  iframe.setAttribute('allow', 'fullscreen');
+  $('frames').appendChild(iframe);
+  const frame = controller.createFrame(iframe);
+  const tab = { id, title: 'new tab', url: '', frame, iframe };
+  tabs.push(tab);
+  iframe.addEventListener('load', () => {
+    if (tab.id !== activeId) return;
+    const u = realUrl(iframe.src);
+    if (u && !u.startsWith('about:')) {
+      tab.url = u;
+      tab.title = hostOf(u);
+      $('url').value = u;
+      renderTabs();
+      setStatus('proxying ' + u);
+    }
+  });
+  switchTab(id);
+  if (url) go(url);
+  else { tab.url = DDG_HOME; frame.go(DDG_HOME); }
+  return tab;
+}
+
+function switchTab(id) {
+  activeId = id;
+  tabs.forEach(t => t.iframe.classList.toggle('on', t.id === id));
+  const t = activeTab();
+  if (t) { $('url').value = t.url; document.title = t.title + ' — hub'; }
+  renderTabs();
+}
+
+function closeTab(id) {
+  const i = tabs.findIndex(t => t.id === id);
+  if (i < 0) return;
+  const [t] = tabs.splice(i, 1);
+  t.iframe.remove();
+  if (!tabs.length) { newTab(); return; }
+  if (id === activeId) switchTab(tabs[Math.max(0, i - 1)].id);
+  else renderTabs();
+}
+
+function go(raw) {
+  const t = activeTab();
+  if (!t || !controller) { setStatus('not ready', true); return; }
+  const u = resolveInput(raw !== undefined ? raw : $('url').value);
+  if (!u) return;
+  setStatus('loading ' + u);
+  t.frame.go(u);
+}
+
+/* bookmarklets */
+const BM_PRESETS = [
+  { name: 'edit', code: "document.designMode = document.designMode === 'on' ? 'off' : 'on'" },
+  { name: 'dark', code: "document.documentElement.style.filter = document.documentElement.style.filter ? '' : 'invert(1) hue-rotate(180deg)'" },
+];
+function getBms() {
+  try { return JSON.parse(localStorage.getItem('hub-bm') || '[]'); }
+  catch (e) { return []; }
+}
+function renderBms() {
+  const bar = $('bmbar');
+  bar.querySelectorAll('.bm:not(#bmadd)').forEach(e => e.remove());
+  const add = $('bmadd');
+  [...BM_PRESETS, ...getBms()].forEach(b => {
+    const el = document.createElement('button');
+    el.className = 'bm'; el.textContent = b.name; el.title = b.code.slice(0, 80);
+    el.onclick = () => runBm(b);
+    bar.insertBefore(el, add);
+  });
+}
+function runBm(b) {
+  const t = activeTab();
+  if (!t) return;
+  try {
+    const code = String(b.code).replace(/^javascript:/i, '');
+    new t.iframe.contentWindow.Function(code)();
+    setStatus('ran bookmarklet: ' + b.name);
+  } catch (e) {
+    setStatus('bookmarklet failed: ' + e.message, true);
+  }
+}
+$('bmadd').onclick = () => {
+  const name = prompt('bookmarklet name:');
+  if (!name) return;
+  const code = prompt('javascript code (without javascript: prefix):');
+  if (!code) return;
+  const bms = getBms();
+  bms.push({ name: name.trim(), code: code.trim() });
+  localStorage.setItem('hub-bm', JSON.stringify(bms));
+  renderBms();
+};
+
+/* init */
 async function init() {
   try {
-    setStatus('Registering service worker...');
+    setStatus('registering worker...');
     const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' });
     await navigator.serviceWorker.ready;
     if (!navigator.serviceWorker.controller) {
       await new Promise((res) => navigator.serviceWorker.addEventListener('controllerchange', res, { once: true }));
     }
     const sw = navigator.serviceWorker.controller || reg.active;
-    if (!sw) throw new Error('Service worker did not activate');
+    if (!sw) throw new Error('worker failed');
 
-    setStatus('Loading proxy engine...');
+    setStatus('loading engine...');
     for (const src of ['/scram/scramjet.js', '/controller/controller.api.js', '/utils/scramjet-utils.js']) {
       await loadScript(src);
     }
     const { default: BareClient } = await import('/baremod/index.mjs');
 
-    setStatus('Connecting...');
+    setStatus('connecting...');
     const api = window.$scramjetController;
     controller = new api.Controller({
       serviceworker: sw,
@@ -71,37 +214,19 @@ async function init() {
     await controller.wait();
     setInterval(() => { navigator.serviceWorker.controller?.postMessage('keepalive'); }, 15000);
 
-    setStatus('Ready. Enter a URL above.');
+    renderBms();
+    setStatus('ready');
     const u = new URLSearchParams(location.search).get('u');
-    if (u) { $('url').value = u; go(u); }
+    newTab(u ? resolveInput(u) : null);
   } catch (e) {
-    setStatus('Proxy failed to start: ' + e.message, true);
+    setStatus('failed: ' + e.message, true);
   }
-}
-
-function normalize(u) {
-  u = u.trim();
-  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
-  return u;
-}
-
-function go(u) {
-  if (!controller) { setStatus('Proxy not ready yet.', true); return; }
-  u = normalize(u || $('url').value);
-  if (!u) return;
-  setStatus('Loading ' + u);
-  const frame = controller.createFrame($('frame'));
-  frame.go(u);
-  $('frame').addEventListener('load', () => setStatus('Proxying ' + u), { once: true });
 }
 
 $('go').onclick = () => go();
 $('url').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
-$('fs').onclick = () => {
-  const f = $('frame');
-  if (document.fullscreenElement) document.exitFullscreen();
-  else if (f.requestFullscreen) f.requestFullscreen();
-};
+$('newtab').onclick = () => newTab();
+$('url').addEventListener('focus', (e) => e.target.select());
 
 init();
 </script>

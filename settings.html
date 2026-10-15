@@ -3,61 +3,59 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Settings</title>
+<title>settings</title>
 <link rel="stylesheet" href="./style.css" />
 <script src="./app.js"></script>
 </head>
 <body>
 <header>
-  <div class="logo" onclick="location.href='./index.html'">GAME<span>HUB</span></div>
+  <div class="logo" onclick="location.href='./index.html'">HUB</div>
   <nav>
-    <button class="btn" onclick="location.href='./games.html'">Games</button>
-    <button class="btn" onclick="location.href='./proxy.html'">Proxy</button>
-    <button class="btn" onclick="location.href='./settings.html'">Settings</button>
+    <button class="nlink" onclick="location.href='./games.html'">games</button>
+    <button class="nlink" onclick="location.href='./proxy.html'">proxy</button>
+    <button class="nlink" onclick="location.href='./settings.html'">settings</button>
   </nav>
 </header>
 
 <div class="settings">
   <div class="setting-group">
-    <h3>Tab Cloak</h3>
-    <label>Preset disguise</label>
+    <h3>tab cloak</h3>
+    <label>preset</label>
     <select id="cloak">
-      <option value="default">Game Hub (default)</option>
-      <option value="classroom">Google Classroom</option>
-      <option value="docs">Google Docs</option>
-      <option value="drive">Google Drive</option>
-      <option value="canvas">Canvas Dashboard</option>
-      <option value="clever">Clever Portal</option>
+      <option value="default">hub</option>
+      <option value="classroom">google classroom</option>
+      <option value="docs">google docs</option>
+      <option value="drive">google drive</option>
+      <option value="canvas">canvas</option>
+      <option value="clever">clever</option>
     </select>
-    <label>Custom tab title (overrides preset)</label>
-    <input type="text" id="ctitle" placeholder="e.g. Math Homework" />
-    <label>Custom favicon URL (overrides preset)</label>
-    <input type="text" id="cicon" placeholder="https://..." />
-    <p class="note">The tab title and icon change instantly and apply on every page.</p>
+    <label>custom title</label>
+    <input type="text" id="ctitle" placeholder="" />
+    <label>custom icon url</label>
+    <input type="text" id="cicon" placeholder="" />
   </div>
 
   <div class="setting-group">
-    <h3>Appearance</h3>
-    <label>Theme</label>
+    <h3>theme</h3>
     <select id="theme">
-      <option value="dark">Dark</option>
-      <option value="light">Light</option>
+      <option value="dark">black</option>
+      <option value="light">white</option>
     </select>
   </div>
 
   <div class="setting-group">
-    <h3>Stealth</h3>
+    <h3>stealth</h3>
     <div class="row2">
-      <button class="btn" id="blank">Open hub in about:blank</button>
+      <button class="btn" id="blank">open in about:blank</button>
     </div>
-    <p class="note">Opens the hub inside a blank tab so it doesn't show in your history as a game site.</p>
+    <p class="note">hides the site from history as a game page.</p>
   </div>
 
   <div class="row2">
-    <button class="btn primary" id="save">Save Settings</button>
-    <button class="btn" id="reset">Reset</button>
+    <button class="btn" id="save">save</button>
+    <button class="btn" id="reset">reset</button>
   </div>
-  <p class="note" id="saved" style="display:none;color:#4ade80">Saved.</p>
+  <p class="note" id="saved" style="display:none">saved.</p>
 </div>
 
 <script>
