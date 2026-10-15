@@ -67,13 +67,18 @@ nav { margin-left: auto; display: flex; gap: 4px; }
 /* game grid */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
 .card {
-  border: 1px solid var(--line); border-radius: 8px;
-  padding: 20px 10px; text-align: center; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px; text-align: center; cursor: pointer;
   transition: border-color .15s, transform .15s;
   background: var(--bg);
+  display: flex; flex-direction: column; gap: 10px;
 }
 .card:hover { border-color: var(--faint); transform: translateY(-2px); }
-.card .t { font-size: 13px; font-weight: 500; line-height: 1.4; }
+.card .thumb {
+  width: 100%; aspect-ratio: 1; border-radius: 6px;
+  background: #0b0b0b; display: block;
+}
+.card .t { font-size: 12px; font-weight: 500; line-height: 1.35; padding: 0 2px 2px; }
 
 /* player */
 .player-wrap { display: flex; flex-direction: column; height: 100vh; }
